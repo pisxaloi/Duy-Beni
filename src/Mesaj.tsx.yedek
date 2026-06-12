@@ -1,0 +1,395 @@
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { socratesData } from "./data/socrates";
+import { konfucyusData } from "./data/konfucyus";
+import { jungData } from "./data/jung";
+import { unasData } from "./data/unas";
+
+// ============================================================
+// nefertitiData – 19 Nefertiti cümlesi (b01–b19)
+// ============================================================
+const nefertitiData: string[] = [
+  "Ben Nil'in kızı, güneşin kızı Nefertiti. Oku, şimdi sana sesleniyorum.",
+  "Ben tahtın sahibi, iki ülkenin hanımı Nefertiti. Oku, sana bir çağrım var.",
+  "Ben Amarna'nın ışığı, piramitlerin sessiz tanığı Nefertiti. Oku, bugün sana ne fısıldayacağım.",
+  "Ben kumların kalbi, Nil'in sesi Nefertiti. Oku, bu gün sana ne diyeceğim.",
+  "Ben mavi tacın sahibi, iki ülkenin birleştiricisi Nefertiti. Oku.",
+  "Ben güneş diskinin çocuğu, Akhenaton'un eşi Nefertiti. Oku, sana bir sır vereceğim.",
+  "Ben doğanın dengesi, evrenin aynası Nefertiti. Oku, bugün sana ne söyleyeceğim.",
+  "Ben iki diyarın koruyucusu, gölgelerin ötesi Nefertiti. Oku, bak bu gün ne diyeceğim.",
+  "Ben hiyerogliflerin sırrı, okunmayan satır Nefertiti. Oku, büyük şeyler söyleyeceğim.",
+  "Ben kum fırtınasının ortası, vahanın sessizliği Nefertiti. Oku, bu gün sana ne diyorum.",
+  "Ben batmayan güneş, doğmayan ay Nefertiti. Oku, bugün sana fısıldıyorum.",
+  "Ben iki diyarın köprüsü, çağların tanığı Nefertiti. Oku, şimdi sana dönüyorum.",
+  "Ben papirüsün yaprağı, nilüferin açan çiçeği Nefertiti. Oku, zamanı geldi.",
+  "Ben çölün rüzgarı, vahanın serinliği Nefertiti. Oku,",
+  "Ben iki diyarın yazıcısı, kaderin kâtibi Nefertiti. Oku, bugün sana ne yazdım.",
+  "Ben yıldızların dansı, gökyüzünün haritası Nefertiti. Oku, söyleyeceklerim önemli.",
+  "Ben iki diyarın gülü, dikeni olmayan Nefertiti. Oku, şimdi sana konuşacağım.",
+  "Ben doğumun ve ölümün döngüsü, sonsuzluğun kendisi Nefertiti. Oku, bu gün sana ne diyorum.",
+  "Ben iki diyarın terazisi, kalpleri tartan Nefertiti. Oku, şimdi adalet vakti.",
+];
+
+// ============================================================
+// hashCode – Bernstein Hash (deterministik)
+// ============================================================
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+// ============================================================
+// kantSüzgeci – Kant Mantık Süzgeci
+// ============================================================
+function kantSüzgeci(cümle: string): string {
+  let temiz = cümle;
+  temiz = temiz.replace(/^[\d\s\.\,\;\:\!\?\-\(\)\[\]\{\}""''""''""'']+/, "");
+  temiz = temiz.replace(/\s{2,}/g, " ");
+  temiz = temiz.trim();
+  temiz = temiz.replace(/^[^a-zA-ZıİğĞüÜşŞöÖçÇ]+/, "").trim();
+  if (temiz.split(" ").length < 2) {
+    return cümle.replace(/^[^a-zA-ZıİğĞüÜşŞöÖçÇ]+/, "").trim();
+  }
+  return temiz;
+}
+
+// ============================================================
+// localStorage yardımcıları – Günlük kullanım takibi
+// ============================================================
+function getRecentItems(): { ogutler: string[]; benzetmeler: string[] } {
+  const history: { date: string; ogut: string; benzetme: string }[] = JSON.parse(
+    localStorage.getItem("messageHistory") || "[]"
+  );
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const filtered = history.filter(
+    (entry) => new Date(entry.date) >= sevenDaysAgo
+  );
+  localStorage.setItem("messageHistory", JSON.stringify(filtered));
+  return {
+    ogutler: filtered.map((entry) => entry.ogut),
+    benzetmeler: filtered.map((entry) => entry.benzetme),
+  };
+}
+
+// ============================================================
+// Mısır/doğa/evrensel benzetmeler
+// ============================================================
+const benzetmeler = [
+  "Nil'in çekilip bereketli toprak bırakması gibi.",
+  "Bokböceğinin güneşi yuvarladığı gibi emeğini sürdür.",
+  "Piramidin taşları gibi sarsılmaz ol.",
+  "Nilüferin çamurdan doğduğu gibi zorluktan güzellik çıkar.",
+  "Çölün kum fırtınası gibi geçicidir, bekleyen geçer.",
+  "Timsahın sabrı gibi bekle, zamanı geldiğinde hamle yap.",
+  "Firavunun tacı gibi ağır ama taşımaya değer.",
+  "Hiyerogliflerin sırrı gibi derindir, okumayı bilene.",
+  "Sfenks'in sessizliği gibi gizemlidir, soru sormayı bilene.",
+  "Nil'in her yıl taşması gibi döngüseldir, her son yeni başlangıçtır.",
+  "Yılanın deri değiştirmesi gibi eskiyi bırak, yenilen.",
+  "Kartalın gökyüzüne yükselmesi gibi özgürdür ruhun.",
+  "Güneşin her sabah doğması gibi umut da yeniden doğar.",
+  "Ayın evreleri gibi değişirsin, her haliyle kutsaldır.",
+  "Çölün vahası gibi saklıdır huzur, içine bakana.",
+  "Aslanın gücü gibi cesur ol, korku seni yönetmesin.",
+  "Akrebin iğnesi gibi keskin ol, gerektiğinde savun.",
+  "Mumyanın bedeni koruduğu gibi bilgeliğini koru.",
+  "Rahibin duası gibi içten ol, samimiyet her kapıyı açar.",
+  "Şahinin keskin bakışı gibi net gör, bulanık olanı ele.",
+  "Ağacın kökleri gibi derine in, sağlam dur.",
+  "Rüzgarın yönü gibi değişir hayat, akışına bırak.",
+  "Denizin dalgası gibi gelir geçer, kalıcı olan içindeki derinliktir.",
+  "Yıldızların ışığı gibi uzaktan da olsa yol gösterir.",
+  "Toprağın tohumu kucaklaması gibi sabırlı ol.",
+  "Kelebeğin kanat çırpması gibi küçük adımlar büyük değişim yaratır.",
+  "Dağın zirvesi gibi uzaktan görünür, ama oraya varmak emek ister.",
+  "Nehrin akışı gibi durmadan ilerle, takılıp kalma.",
+  "Ateşin koru gibi içinde taşı sıcaklığını, yüzeysel olma.",
+  "Gökyüzünün enginliği gibi sınırlarını zorla.",
+  "Anka kuşu gibi küllerinden doğar, her bitiş yeni başlangıçtır.",
+  "Prometheus'un ateşi gibi bilgiyi taşı, ama yanmayı da göze al.",
+  "Athena'nın bilgeliği gibi savaşmadan da kazanmayı bil.",
+  "Evin temeli gibi sağlam ol, üzerine her şey inşa edilir.",
+  "Kitabın sayfaları gibi her gün yeni bir sayfa açılır.",
+  "Aynanın yansıması gibi kendine olduğun gibi bak.",
+  "Anahtarın kilidi açması gibi doğru soru, doğru cevabı buldurur.",
+  "Haritanın yolu göstermesi gibi iç sesin de sana yol gösterir.",
+  "Tohumun filizlenmesi gibi sabır et, her şeyin zamanı vardır.",
+  "Köprünün iki yakayı birleştirmesi gibi insanları anlamaya çalış.",
+  "Fenerin karanlığı aydınlatması gibi küçük bir iyilik bile büyük fark yaratır.",
+  "Yolun sonunda ışık görmek gibi umudunu kaybetme, her karanlık gece biter.",
+  "Işık gibi karanlığı da kucakla, ikisi de hayatın parçasıdır.",
+  "Sonsuzluk gibi ne başı ne sonu vardır, sadece vardır."
+];
+
+// ============================================================
+// generateDailyMessage – ESKİ SİSTEM + NEFERTITI + BENZETME
+// ============================================================
+function generateDailyMessage(seed: number) {
+  // 1. Devasa havuz (Sokrates, Konfüçyus, Jung, Unas)
+  const BUYUK_HAVUZ = [
+    ...socratesData,
+    ...konfucyusData,
+    ...jungData,
+    ...unasData,
+  ];
+
+  // 2. Nefertiti başlığı seç
+  const baslikIndex = Math.abs(seed) % nefertitiData.length;
+  const baslik = nefertitiData[baslikIndex];
+
+  // 3. Eski sistemden bir cümle seç
+  let cümleIndex = Math.abs(seed * 3) % BUYUK_HAVUZ.length;
+  let hamCümle = BUYUK_HAVUZ[cümleIndex];
+
+  // 4. Kant süzgecinden geçir
+  hamCümle = kantSüzgeci(hamCümle);
+
+  // 5. Benzetme seç (tekrar kontrolü ile)
+  let benzetmeIndex = Math.abs(seed * 13) % benzetmeler.length;
+  const recentBenzetmeler = getRecentItems().benzetmeler;
+  let attempts = 0;
+  while (recentBenzetmeler.includes(benzetmeler[benzetmeIndex]) && attempts < benzetmeler.length) {
+    benzetmeIndex = (benzetmeIndex + 1) % benzetmeler.length;
+    attempts++;
+  }
+  const benzetme = benzetmeler[benzetmeIndex];
+
+  // 6. Mesajı oluştur
+  const message = `${baslik} ${hamCümle} ${benzetme}`;
+
+  // 7. Tekrar kontrolü için kaydet (öğüt olarak eski cümle kullanılıyor)
+  const today = new Date().toISOString().split("T")[0];
+  let history = JSON.parse(localStorage.getItem("messageHistory") || "[]");
+  const existingIndex = history.findIndex((entry: any) => entry.date === today);
+  const newEntry = { date: today, ogut: hamCümle, benzetme: benzetme };
+
+  if (existingIndex !== -1) {
+    history[existingIndex] = newEntry;
+  } else {
+    history.push(newEntry);
+  }
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  history = history.filter((entry: any) => new Date(entry.date) >= sevenDaysAgo);
+  localStorage.setItem("messageHistory", JSON.stringify(history));
+
+  return { message: message };
+}
+
+// ============================================================
+// Mesaj Component'i
+// ============================================================
+interface MesajProps {
+  onNavigate: (view: string) => void;
+  volume?: number;
+  onVolumeChange?: (vol: number) => void;
+}
+
+const Mesaj: React.FC<MesajProps> = ({ onNavigate, volume, onVolumeChange }) => {
+  const [dailyMessage, setDailyMessage] = useState<{ message: string } | null>(null);
+  const [dayPhase, setDayPhase] = useState<"init" | "waiting" | "reading" | "done">("init");
+  const [geminiQuotaError, setGeminiQuotaError] = useState(false);
+  const [shakeArmed, setShakeArmed] = useState(false);
+  const [shakeTriggered, setShakeTriggered] = useState(false);
+  const [showAlarmOverlay, setShowAlarmOverlay] = useState(false);
+  const shakeLastRef = useRef({ x: 0, y: 0, z: 0, lastTime: 0 });
+
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    try {
+      const stored = localStorage.getItem("dailyMessage");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.date === today && parsed.message) {
+          setDailyMessage({ message: parsed.message });
+          setDayPhase("done");
+          return;
+        }
+      }
+    } catch {}
+
+    let selected: number[] | undefined;
+    let rejected: number[] | undefined;
+    try {
+      const s = localStorage.getItem("selectedIndices");
+      const r = localStorage.getItem("rejectedIndices");
+      if (s) selected = JSON.parse(s);
+      if (r) rejected = JSON.parse(r);
+    } catch {}
+
+    setDayPhase("reading");
+
+    let seedStr = "kadim";
+    if (selected && selected.length > 0) {
+      for (const idx of selected) {
+        seedStr += "-s" + (idx + 1) * 7;
+      }
+    } else {
+      seedStr += "-default";
+    }
+    if (rejected && rejected.length > 0) {
+      for (const idx of rejected) {
+        seedStr += "-r" + (idx + 1) * 13;
+      }
+    }
+    seedStr += "-d" + today.replace(/-/g, "");
+    const seed = hashCode(seedStr);
+
+    const result = generateDailyMessage(seed);
+    const msg = result.message;
+    setDailyMessage({ message: msg });
+    setDayPhase("done");
+
+    try {
+      localStorage.setItem(
+        "dailyMessage",
+        JSON.stringify({ date: today, message: msg })
+      );
+    } catch {}
+  }, []);
+
+  return (
+    <motion.div
+      key="index"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex-1 flex flex-col relative justify-start items-center p-3 pt-8 text-center overflow-hidden h-full min-h-0 bg-black"
+    >
+      {!dailyMessage || dayPhase !== "done" ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-3">
+          <div className="w-8 h-8 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin" />
+          <p className="text-yellow-500 text-[10px] tracking-[0.5em] uppercase animate-pulse">
+            {dayPhase === "waiting" || dayPhase === "reading"
+              ? "Kadim bağ kuruluyor..."
+              : "Kadim Kayıtlar Okunuyor..."}
+          </p>
+          {dayPhase === "reading" && (
+            <p className="text-white/40 text-[9px] tracking-[0.3em] font-light animate-pulse mt-2">
+              Kadim bağ kuruluyor...
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="w-full max-w-[450px] flex-1 flex flex-col items-center justify-center pt-0 relative overflow-hidden pb-0">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <img
+              src="/mesajalt.jpg"
+              className="w-full h-full object-contain"
+              alt="Çerçeve"
+            />
+          </div>
+          <div className="relative z-10 w-full px-3 sm:px-4 flex flex-col justify-start">
+            <span className="text-stone-400 text-xs leading-snug text-center block pt-20">
+              {new Intl.DateTimeFormat("tr-TR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                weekday: "long",
+              }).format((() => {
+                const td = localStorage.getItem("__testDate");
+                return td ? new Date(td + "T12:00:00") : new Date();
+              })())}
+            </span>
+            <div className="flex flex-col items-center justify-center w-full shrink-0 pt-5">
+            </div>
+            {geminiQuotaError && (
+              <div className="w-full p-2 mb-3 text-center">
+                <span className="text-[9px] text-yellow-400 font-semibold tracking-[0.05em] uppercase">
+                  ⚠️ GEÇİCİ KAPASİTE YOĞUNLUĞU: Lokal çevrimdışı arşiv otomatik devreye alındı. Kesintisiz okumaya devam edebilirsin.
+                </span>
+              </div>
+            )}
+            {dailyMessage && dayPhase === "done" ? (
+              <div className="relative min-h-0 w-full flex items-center justify-center">
+                <div className="mt-3 w-full px-6">
+                  <p className="text-[13px] text-stone-300 leading-snug text-justify">
+                    {dailyMessage.message}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+      <div className="absolute bottom-[80px] left-0 right-0 w-full flex justify-center">
+        <img
+          src="/pisxaloi.png"
+          alt="Test Bildirimi Gönder"
+          onClick={() => {
+            if ((window as any).__testNotification) {
+              (window as any).__testNotification();
+            }
+          }}
+          className="w-[100px] h-[100px] object-contain opacity-80 cursor-pointer active:scale-90 transition-transform duration-150 hover:opacity-100 hover:shadow-[0_0_30px_rgba(234,179,8,0.6)] hover:brightness-110"
+        />
+      </div>
+      <div className="absolute bottom-[200px] left-0 right-0 w-full flex justify-center gap-2 z-[99999]">
+        <button
+          onClick={async () => {
+            try {
+              if ((window as any).__testNotification) {
+                await (window as any).__testNotification();
+              } else {
+                const { LocalNotifications } = await import('@capacitor/local-notifications');
+                const baslik = "Kadim Bilge";
+                await LocalNotifications.schedule({
+                  notifications: [{
+                    id: 9999,
+                    title: baslik,
+                    body: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
+                    largeBody: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
+                    summaryText: "Duy Beni",
+                    schedule: { at: new Date(Date.now() + 3000), allowWhileIdle: true },
+                    sound: undefined,
+                    attachments: undefined,
+                    actionTypeId: "",
+                    extra: { url: "/?autoPlay=true" }
+                  }]
+                });
+                console.log("✅ Test notification scheduled in 3 seconds with title:", baslik);
+              }
+              setShakeArmed(true);
+              setShakeTriggered(false);
+              shakeLastRef.current = { x: 0, y: 0, z: 0, lastTime: 0 };
+              console.log('📳 Shake system ARMED! Telefonu salla!');
+              setTimeout(() => {
+                setShowAlarmOverlay(true);
+              }, 500);
+            } catch (e) {
+              console.warn("Test notification failed:", e);
+              setShowAlarmOverlay(true);
+            }
+          }}
+          className="px-4 py-1.5 bg-yellow-600/30 border border-yellow-500/50 rounded-full text-yellow-400 text-[9px] font-bold tracking-[0.3em] uppercase hover:bg-yellow-500/40 hover:border-yellow-400 active:scale-95 transition-all duration-200 shadow-[0_0_15px_rgba(234,179,8,0.3)]"
+        >
+          🔔 BİLDİRİM TEST
+        </button>
+        <button
+          onClick={() => {
+            const now = new Date();
+            const randomOffset = Math.floor(Math.random() * 30);
+            const testDate = new Date(now.getTime() - randomOffset * 86400000);
+            const dateStr = testDate.toISOString().split("T")[0];
+            localStorage.setItem("__testDate", dateStr);
+            localStorage.removeItem("dailyMessage");
+            console.log("📅 Test date set to:", dateStr);
+            window.location.reload();
+          }}
+          className="px-4 py-1.5 bg-stone-700/40 border border-stone-500/40 rounded-full text-stone-300 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-stone-600/50 hover:border-stone-400 active:scale-95 transition-all duration-200"
+        >
+          📅 TARİH DEĞİŞTİR
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+export default Mesaj;

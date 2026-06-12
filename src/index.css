@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/* Metin kutularında çerçeve çizgilerini kaldır - input, textarea, select */
+input:where([type="text"], [type="tel"], [type="search"], [type="email"], [type="password"], [type="url"], [type="number"]),
+textarea,
+select {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Range input'un varsayılan stillerini koru ama outline'ı kaldır */
+input[type="range"] {
+  outline: none !important;
+}
+
+/* İtalik tamamen yasak - tüm font-style italic kullanımları engellendi */
+*,
+*::before,
+*::after {
+  font-style: normal !important;
+}
+
+@theme {
+  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat", sans-serif;
+  --font-mono: "Montserrat", ui-monospace, SFMono-Regular, monospace;
+  --font-egyptian: "Noto Sans Egyptian Hieroglyphs", sans-serif;
+}
+
+@layer base {
+  html {
+    font-size: 14px;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    background-color: black;
+    overscroll-behavior-y: none;
+  }
+
+  /* Tailwind ring shadow'u ve focus outline'ı kaldır */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    box-shadow: 0 0 #0000 !important;
+    outline: none !important;
+  }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 2px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(250, 204, 21, 0.2);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(250, 204, 21, 0.4);
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  @keyframes scrollText {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-100%); }
+  }
+
+  .animate-unas-scroll {
+    animation: scrollText 600s linear infinite;
+  }
+
+  .paused-scroll {
+    animation-play-state: paused;
+  }
+}
+
+/* ============================================
+   TELEFON ÖNİZLEME ÇERÇEVESİ (Masaüstü)
+   - Mobilde (dokunmatik/dar ekran): tam ekran
+   - Masaüstünde (fare/geniş ekran): telefon ölçüsünde
+   ============================================ */
+
+/* Mobil (varsayılan): tam ekran */
+.phone-frame {
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Masaüstü: telefon ölçüsünde çerçeve (412×915 = Android geniş ekran) */
+@media (hover: hover) and (pointer: fine) and (min-width: 768px) {
+  body {
+    background-color: #1a1a2e !important;
+  }
+  #root {
+    width: 412px !important;
+    height: 915px !important;
+    max-width: 412px !important;
+    max-height: 915px !important;
+    margin: 0 auto !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}

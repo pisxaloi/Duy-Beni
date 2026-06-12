@@ -1,0 +1,83 @@
+import React, { useState, useEffect } from 'react';
+import { db, auth } from './firebase'; // Firebase bağlantı dosyanın yoluna göre gerekirse güncellenir
+import { doc, updateDoc, onSnapshot, arrayUnion, arrayRemove } from 'firebase/firestore';
+
+export default function KlanTest() {
+  const [isim, setIsim] = useState('');
+  const [list, setList] = useState<string[]>([]);
+  const user = auth.currentUser;
+  const userId = user?.uid || "test-user"; // Güvenlik duvarı için uid kontrolü
+
+  // 1. Veritabanından isimleri anlık çekme (Realtime Listener)
+  useEffect(() => {
+    const docRef = doc(db, 'users', userId);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setList(docSnap.data().friends || []);
+      }
+    }, console.error);
+    return () => unsubscribe();
+  }, [userId]);
+
+  // 2. Listeye Yeni İsim Ekleme (Firestore Güvenlik Duvarını Geçen Yapı)
+  const handleEkle = async () => {
+    if (!isim.trim()) return;
+    try {
+      const docRef = doc(db, 'users', userId);
+      // Paket içine uid ve listeyi ekleyerek güncelliyoruz
+      await updateDoc(docRef, {
+        uid: userId,
+        friends: arrayUnion(isim.trim())
+      });
+      setIsim(''); // Kutuyu temizle
+    } catch (error) {
+      console.error("Ekleme hatası:", error);
+      alert("Firestore Güvenlik Duvarı Reddetti! uid eksik veya yetki yok.");
+    }
+  };
+
+  // 3. Kullanıcının İstediği İsmi Listeden Manuel Çıkarma Fonksiyonu
+  const handleCikar = async (silinecekIsim: string) => {
+    try {
+      const docRef = doc(db, 'users', userId);
+      await updateDoc(docRef, {
+        uid: userId,
+        friends: arrayRemove(silinecekIsim)
+      });
+    } catch (error) {
+      console.error("Silme hatası:", error);
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+      <h3 style={{ textAlign: 'center' }}>KLAN Listesi Manuel Test Odası</h3>
+      
+      {/* İsim Yazma Kutusu ve Buton */}
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+        <input 
+          type="text" 
+          value={isim} 
+          onChange={(e) => setIsim(e.target.value)} 
+          placeholder="Bir isim yaz abi..." 
+          style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+        />
+        <button onClick={handleEkle} style={{ padding: '8px 16px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+          Ekle
+        </button>
+      </div>
+
+      {/* Temiz Metin Listesi */}
+      <ul style={{ listStyleType: 'none', padding: 0 }}>
+        {list.map((item, index) => (
+          <li key={index} style={{ display: 'flex', justifyContent: 'between', alignItems: 'center', padding: '10px', borderBottom: '1px solid #eee' }}>
+            <span>{item}</span>
+            <button onClick={() => handleCikar(item)} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer' }}>
+              Çıkar
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

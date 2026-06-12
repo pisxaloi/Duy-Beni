@@ -1,0 +1,6 @@
+{
+  "name": "Unas & Jung: Günlük Rehber",
+  "description": "Antik Mısır Unas metinleri ve Carl Jung öğretilerini yapay zeka ile sentezleyen mistik ve psikolojik rehberlik uygulaması.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}

@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && 
+        incoming().uid == userId &&
+        incoming().keys().hasAll(['uid', 'createdAt', 'updatedAt']) &&
+        incoming().friends is list &&
+        incoming().friends.size() <= 500;
+      allow update: if isOwner(userId) &&
+        incoming().uid == userId &&
+        incoming().updatedAt == request.time &&
+        incoming().friends is list &&
+        incoming().friends.size() <= 500;
+    }
+
+    match /shares/{shareId} {
+      allow create: if isSignedIn() &&
+        incoming().fromId == request.auth.uid &&
+        isValidId(incoming().toId) &&
+        incoming().createdAt == request.time;
+      allow read: if isSignedIn() && 
+        (resource.data.fromId == request.auth.uid || resource.data.toId == request.auth.uid);
+    }
+  }
+}

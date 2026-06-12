@@ -1,0 +1,5 @@
+Total: 4802
+Line3164: "        // 3 hedef saat için bildirim zamanlayıcıları kur (canlı test: 00:06, 00:21, 00:36)"
+Line3195: "        console.log('✅ Local notifications scheduled for times: 00:06, 00:21, 00:36 (canli test)');"
+Has1105: true
+Has1115: true
