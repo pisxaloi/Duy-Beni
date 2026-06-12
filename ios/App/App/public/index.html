@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Duy Beni</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+      // Mevcut service worker'ları temizle
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+
+      // Bildirimden gelindiğinde autoPlay=true parametresini kontrol et
+      // ve sayfa yüklendiğinde React uygulamasına bildir
+      (function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('autoPlay') === 'true') {
+          // localStorage'a işaret koy ki React uygulaması görsün
+          localStorage.setItem('autoPlay', 'true');
+          // URL'den autoPlay parametresini temizle (geri butonu sorunu olmasın)
+          const cleanUrl = window.location.pathname + window.location.hash;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/jpeg" href="./logo-duy-beni.jpg" />
+    <link rel="apple-touch-icon" href="./logo-duy-beni.jpg" />
+    <link rel="manifest" href="./manifest.json" />
+    <script type="module" crossorigin src="./assets/index-Cefu6ARk.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DjLWKTh9.css">
+  </head>
+  <body>
+    <div id="root">
+      <div id="error-fallback" style="display: none; padding: 20px; color: red; font-family: sans-serif; background: black; min-height: 100vh;">
+        <h3>Uygulama yüklenirken bir hata oluştu:</h3>
+        <pre id="error-fallback-message" style="white-space: pre-wrap; word-wrap: break-word; font-size: 10px;"></pre>
+      </div>
+    </div>
+    <script>
+      window.addEventListener('error', function(e) {
+        document.getElementById('error-fallback').style.display = 'block';
+        document.getElementById('error-fallback-message').innerText = e.message + '\n\n' + e.filename + ':' + e.lineno + ':' + e.colno + '\n\n' + (e.error ? e.error.stack : '');
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        document.getElementById('error-fallback').style.display = 'block';
+        document.getElementById('error-fallback-message').innerText = 'Uncaught in Promise: ' + e.reason;
+      });
+    </script>
+  </body>
+</html>
+
