@@ -1,0 +1,38 @@
+name: iOS Build and Upload
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-upload:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm install
+      - run: npm run build
+      - run: npx cap sync ios
+
+      - name: Setup Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Build and Export IPA
+        run: |
+          cd ios/App
+          xcodebuild -scheme App -configuration Release -sdk iphoneos archive -archivePath ./build/App.xcarchive
+          xcodebuild -exportArchive -archivePath ./build/App.xcarchive -exportPath ./build -exportOptionsPlist exportOptions.plist
+
+      - name: Upload to App Store Connect
+        uses: apple-actions/upload-testflight-build@v1
+        with:
+          app-path: 'ios/App/build/DuyBeni.ipa'
+          issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
