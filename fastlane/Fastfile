@@ -6,13 +6,10 @@ platform :ios do
     # 1. Web uygulamasını build et
     sh("npm", "run", "build")
 
-    # 2. Capacitor iOS platformunu ekle (ilk seferde)
-    sh("npx", "cap", "add", "ios")
-
-    # 3. Capacitor iOS projesini senkronize et
+    # 2. Capacitor iOS projesini senkronize et
     sh("npx", "cap", "sync", "ios")
 
-    # 4. App Store Connect'e yükle
+    # 3. App Store Connect'e yükle
     build_app(
       scheme: "App",
       workspace: "ios/App/App.xcworkspace",
@@ -39,13 +36,10 @@ platform :ios do
     # 1. Web uygulamasını build et
     sh("npm", "run", "build")
 
-    # 2. Capacitor iOS platformunu ekle (ilk seferde)
-    sh("npx", "cap", "add", "ios")
-
-    # 3. Capacitor iOS projesini senkronize et
+    # 2. Capacitor iOS projesini senkronize et
     sh("npx", "cap", "sync", "ios")
 
-    # 4. TestFlight'a yükle
+    # 3. TestFlight'a yükle
     build_app(
       scheme: "App",
       workspace: "ios/App/App.xcworkspace",
