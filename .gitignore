@@ -7,10 +7,8 @@ coverage/
 .env*
 !.env.example
 
-# iOS
-ios/Pods/
-ios/.build/
-ios/build/
+# iOS (build edilen klasör, her seferinde npx cap add ios ile oluşturulur)
+ios/
 *.xcworkspace/xcuserdata/
 *.xcuserdata/
 

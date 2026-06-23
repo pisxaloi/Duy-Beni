@@ -1,8 +1,0 @@
-{
-	"appId": "com.pisxaloi.duybeni",
-	"appName": "Duy Beni",
-	"webDir": "dist",
-	"packageClassList": [
-		"LocalNotificationsPlugin"
-	]
-}
