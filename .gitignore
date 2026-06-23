@@ -6,3 +6,19 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# iOS
+ios/Pods/
+ios/.build/
+ios/build/
+*.xcworkspace/xcuserdata/
+*.xcuserdata/
+
+# Fastlane
+fastlane/report.xml
+fastlane/test_output/
+fastlane/screenshots/
+fastlane/Preview.html
+
+# API Keys (iOS)
+ios/ApiKey_*.p8

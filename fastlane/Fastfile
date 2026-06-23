@@ -1,0 +1,47 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to App Store"
+  lane :deploy do
+    # 1. Web uygulamasını build et
+    sh("npm", "run", "build")
+
+    # 2. Capacitor iOS projesini senkronize et
+    sh("npx", "cap", "sync", "ios")
+
+    # 3. App Store Connect'e yükle
+    build_app(
+      scheme: "App",
+      workspace: "ios/App/App.xcworkspace",
+      export_method: "app-store",
+      clean: true
+    )
+
+    upload_to_app_store(
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: false
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :testflight do
+    # 1. Web uygulamasını build et
+    sh("npm", "run", "build")
+
+    # 2. Capacitor iOS projesini senkronize et
+    sh("npx", "cap", "sync", "ios")
+
+    # 3. TestFlight'a yükle
+    build_app(
+      scheme: "App",
+      workspace: "ios/App/App.xcworkspace",
+      export_method: "app-store",
+      clean: true
+    )
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true
+    )
+  end
+end
