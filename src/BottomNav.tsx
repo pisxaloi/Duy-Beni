@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MessageCircle, BookOpen, HelpCircle, Users, Pyramid, Volume2 } from "lucide-react";
+import { MessageCircle, BookOpen, HelpCircle, Users, Volume2 } from "lucide-react";
 
 interface BottomNavProps {
   onNavigate: (view: string) => void;
@@ -103,16 +103,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ onNavigate }) => {
         >
           <Users size={20} className="group-hover:scale-110 transition-transform" />
           <span className="text-[9px] uppercase tracking-wider">Klanım</span>
-        </button>
-
-        {/* 5. Kadim Mısır */}
-        <button
-          onClick={() => handleNavigate("ancient")}
-          className="flex flex-col items-center gap-1 text-amber-400/60 hover:text-amber-300 transition-colors group"
-          aria-label="Kadim Mısır"
-        >
-          <Pyramid size={20} className="group-hover:scale-110 transition-transform" />
-          <span className="text-[9px] uppercase tracking-wider">Kadim</span>
         </button>
       </div>
     </>

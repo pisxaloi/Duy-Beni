@@ -12,10 +12,10 @@ const MESAJ_CUMLELERI = [
   "Bu cümleler onun kişisel profilini oluşturuyor.",
   "Günün tarihiyle birleşince her gün için eşsiz bir \"tohum\" ortaya çıkıyor.",
   "Sistemde on ana kategori var: iletişim, iç dünya, beden, dönüşüm, bakım, durgunluk, maneviyat, yaratıcılık, doğa ve ilişkiler.",
-  "Beş bin yıllık Unas Piramidi'ndeki 283 metin, Carl Jung'un aforizmaları, Sokrates'in düşünceleri ve Konfüçyüs'ün öğretileri harmanlanarak, Türkçe'nin doğal akışına uygun cümleler elde ediliyor.",
-  "Son olarak, Kant'ın mantığıyla filtreden geçiriliyor.",
+  "Mesajlar; eski Mısır yazıtları, kadim bilgelerin sözleri ve dünyanın dört bir yanından gelen öğretiler birleştirilerek hazırlanıyor.",
+  "Son olarak mesajlar, herkesin kolayca anlayabileceği biçimde sadeleştiriliyor.",
   "Mesajlar tesadüflerle değil, determinizm yolu ile beş bin yıllık insanlık birikiminden elde edilen kıymetli sonuçlardır.",
-  "Algoritma ne insan ne de Türk olmadığı için küçük dil hataları olabilir.",
+  "Bazı mesajlarda küçük dil hataları olabilir; anlayışla karşıla.",
   "Onları hoş görün.",
   "Her gün gelen mesaj, kişisel profilinizin, tarihin, on kategorinin ve beş bin yıllık bilgeliğin birleşimiyle, tamamen size özeldir.",
 ];

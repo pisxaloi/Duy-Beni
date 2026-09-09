@@ -28,8 +28,8 @@ if "%OS%"=="Windows_NT" setlocal
 
 set DIRNAME=%~dp0
 
-@rem Force JAVA_HOME to Android Studio's JBR
-set JAVA_HOME=C:\Program Files\Android\Android Studio\jbr
+@rem Force JAVA_HOME to Eclipse Adoptium JDK 21
+set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot
 if "%DIRNAME%"=="" set DIRNAME=.
 @rem This is normally unused
 set APP_BASE_NAME=%~n0

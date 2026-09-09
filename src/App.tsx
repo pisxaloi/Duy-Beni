@@ -1,9 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import "./index.css";
 import Mesaj, { generateDailyMessage } from "./Mesaj";
-import Kadim from "./Kadim";
 import Nasil from "./Nasil";
-import HiyeroglifDetay from "./HiyeroglifDetay";
 import Klanim from "./Klanim";
 import Cümleler from "./Cümleler";
 import BottomNav from "./BottomNav";
@@ -191,7 +189,7 @@ const App: React.FC = () => {
   }, []);
 
   // ============================================================
-  // SABAH BİLDİRİMİ ZAMANLAYICI (09:05, 10:05, 11:05)
+  // SABAH BİLDİRİMİ ZAMANLAYICI (Günde 1 kere – saat 07:00)
   // ============================================================
   useEffect(() => {
     const setupLocalNotifications = async () => {
@@ -214,7 +212,8 @@ const App: React.FC = () => {
         // Önce varsa eski zamanlayıcıları temizle
         await LocalNotifications.cancel({
           notifications: [
-            { id: 705 }, { id: 805 }, { id: 905 }, { id: 1005 },
+            { id: 905 }, { id: 1005 }, { id: 1105 },
+            { id: 705 }, { id: 805 },
             { id: 2145 }, { id: 2200 }, { id: 2215 },
             { id: 2245 }, { id: 2300 }, { id: 2315 },
             { id: 2320 }, { id: 2335 }, { id: 2350 },
@@ -222,34 +221,27 @@ const App: React.FC = () => {
           ]
         });
 
-        // 3 hedef saat için bildirim zamanlayıcıları kur
-        const targetTimes = [
-          { id: 905, hour: 9, minute: 5 },
-          { id: 1005, hour: 10, minute: 5 },
-          { id: 1105, hour: 11, minute: 5 },
-        ];
+        // Günde 1 kere – saat 07:00'de bildirim
+        await LocalNotifications.schedule({
+          notifications: [{
+            id: 700,
+            title: "Nefertiti",
+            body: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
+            largeBody: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
+            summaryText: "Duy Beni",
+            schedule: {
+              on: { hour: 7, minute: 0 },
+              allowWhileIdle: true
+            },
+            sound: "beep.wav",
+            attachments: undefined,
+            actionTypeId: "",
+            channelId: "duybeni_channel",
+            extra: { url: "/?autoPlay=true" }
+          }]
+        });
 
-        for (const target of targetTimes) {
-          await LocalNotifications.schedule({
-            notifications: [{
-              id: target.id,
-              title: "Nefertiti",
-              body: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
-              largeBody: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
-              summaryText: "Duy Beni",
-              schedule: {
-                on: { hour: target.hour, minute: target.minute },
-                allowWhileIdle: true
-              },
-              sound: undefined,
-              attachments: undefined,
-              actionTypeId: "",
-              extra: { url: "/?autoPlay=true" }
-            }]
-          });
-        }
-
-        console.log('✅ Local notifications scheduled for times: 09:05, 10:05, 11:05');
+        console.log('✅ Local notification scheduled for 07:00 (1 notification per day)');
       } catch (err) {
         console.warn('LocalNotifications setup failed:', err);
       }
@@ -275,27 +267,9 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* KADİM MISIR - 8 ikonlu Rosetta taşlı giriş ekranı */}
-      {(currentView === "ancient" || currentView === "egypt_ancient") && (
-        <Kadim
-          volume={volume}
-          onBack={handleBack}
-          onNavigate={handleNavigate}
-          onSentenceNavigate={handleSentenceNavigate}
-          onSpeakSentenceRef={handleSpeakSentenceRef}
-        />
-      )}
-
       {currentView === "nasil" && (
         <Nasil
           volume={volume}
-          onClose={handleBack}
-        />
-      )}
-
-      {currentView === "hiyeroglif" && (
-        <HiyeroglifDetay
-          activeEgDetail={null}
           onClose={handleBack}
         />
       )}
