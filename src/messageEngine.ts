@@ -1,5 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+// ============================================================
+// messageEngine – Günlük mesaj motoru (Mesaj.tsx UI'sinden ayrıştırıldı)
+// - Nefertiti başlığı + öğüt + alıntı (Jung/Sokrates/Konfüçyus) + Unas + eylem
+// - 7/14 gün tekrar önleme (localStorage)
+// NOT: Bu dosya UI içermez; yalnızca mesaj üretim motorudur.
+// ============================================================
+
 import { socratesData } from "./data/socrates";
 import { konfucyusData } from "./data/konfucyus";
 import { jungData } from "./data/jung";
@@ -34,7 +39,7 @@ const nefertitiData: string[] = [
 // ============================================================
 // hashCode – Bernstein Hash (deterministik)
 // ============================================================
-function hashCode(str: string): number {
+export function hashCode(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -77,6 +82,64 @@ function getRecentItems(): { ogutler: string[] } {
   };
 }
 
+// ============================================================
+// Alıntı/Unas katmanı yardımcıları – 14 gün tekrar önleme
+// ============================================================
+interface QuoteHistoryEntry {
+  date: string;
+  jung?: string;
+  socrates?: string;
+  konfucyus?: string;
+  unas?: string;
+}
+
+function getRecentQuotes(days: number): {
+  jung: string[];
+  socrates: string[];
+  konfucyus: string[];
+  unas: string[];
+} {
+  const history: QuoteHistoryEntry[] = JSON.parse(
+    localStorage.getItem("quoteHistory") || "[]"
+  );
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const filtered = history.filter((entry) => new Date(entry.date) >= cutoff);
+  localStorage.setItem("quoteHistory", JSON.stringify(filtered));
+  return {
+    jung: filtered
+      .map((entry) => entry.jung)
+      .filter((c): c is string => !!c),
+    socrates: filtered
+      .map((entry) => entry.socrates)
+      .filter((c): c is string => !!c),
+    konfucyus: filtered
+      .map((entry) => entry.konfucyus)
+      .filter((c): c is string => !!c),
+    unas: filtered
+      .map((entry) => entry.unas)
+      .filter((c): c is string => !!c),
+  };
+}
+
+function pickCümle(
+  pool: string[],
+  poolAdı: string,
+  sonKullanilanlar: string[],
+  seed: number,
+  todayStr: string
+): string {
+  const hashInput = `${seed}|${todayStr}|${poolAdı}`;
+  const baslangicIndex = hashCode(hashInput) % pool.length;
+  let index = baslangicIndex;
+  let attempts = 0;
+  while (sonKullanilanlar.includes(pool[index]) && attempts < pool.length) {
+    index = (index + 1) % pool.length;
+    attempts++;
+  }
+  return pool[index];
+}
+
 const ogutler = [
   "Kendini olduğun gibi kabul et. Kusurların bile seni sen yapar.",
   "Sessizliğin içinde saklı olan cevabı duymayı öğren.",
@@ -104,24 +167,29 @@ const ogutler = [
 // generateDailyMessage – ESKİ SİSTEM + NEFERTITI + BENZETME
 // ============================================================
 export function generateDailyMessage(seed: number, testDate?: string) {
-  // 1. Nefertiti başlığı seç (tarihe göre, her gün değişir)
+  // 1. Nefertiti başlığı + öğüt: tarih + cihaz kimliği (deviceId) birlikte hash'lenir.
+  //    Böylece aynı gün farklı cihazlar baştan (giriş cümlesinden) farklı mesaj görür.
   const todayStr = (testDate || new Date().toISOString().split("T")[0]).replace(/-/g, "");
-  let baslikHash = 0;
-  for (let i = 0; i < todayStr.length; i++) {
-    baslikHash = ((baslikHash << 5) - baslikHash) + todayStr.charCodeAt(i);
-    baslikHash |= 0;
-  }
-  const baslikIndex = Math.abs(baslikHash) % nefertitiData.length;
+  const deviceId = getOrCreateDeviceId();
+
+  const hashWithDevice = (input: string): number => {
+    const kaynak = input + "|" + deviceId;
+    let h = 0;
+    for (let i = 0; i < kaynak.length; i++) {
+      h = ((h << 5) - h) + kaynak.charCodeAt(i);
+      h |= 0;
+    }
+    return Math.abs(h);
+  };
+
+  const baslikHash = hashWithDevice(todayStr);
+  const baslikIndex = baslikHash % nefertitiData.length;
   const baslik = nefertitiData[baslikIndex];
 
   // 2. ogutler dizisinden bir öğüt seç (tekrar kontrolü ile)
-  // Tarihe bağlı öğüt seçimi (her gün değişir)
-  let ogutHash = 0;
-  for (let i = 0; i < todayStr.length; i++) {
-    ogutHash = ((ogutHash << 5) - ogutHash) + todayStr.charCodeAt(i);
-    ogutHash |= 0;
-  }
-  let ogutIndex = Math.abs(ogutHash) % ogutler.length;
+  //    Seçim tarihe + cihaza bağlıdır; 7 gün tekrar önleme aynen korunur.
+  const ogutHash = hashWithDevice(todayStr + "|ogut");
+  let ogutIndex = ogutHash % ogutler.length;
   const recentOgutler = getRecentItems().ogutler;
   let attempts = 0;
   while (recentOgutler.includes(ogutler[ogutIndex]) && attempts < ogutler.length) {
@@ -132,6 +200,13 @@ export function generateDailyMessage(seed: number, testDate?: string) {
 
   // 3. Kant süzgecinden geçir
   hamCümle = kantSüzgeci(hamCümle);
+
+  // 3.1 Alıntı katmanı (jung/socrates/konfucyus) + Unas katmanı – 14 gün tekrar önleme
+  const recentQuotes = getRecentQuotes(14);
+  const jungCümle = kantSüzgeci(pickCümle(jungData, "jung", recentQuotes.jung, seed, todayStr));
+  const socratesCümle = kantSüzgeci(pickCümle(socratesData, "socrates", recentQuotes.socrates, seed, todayStr));
+  const konfucyusCümle = kantSüzgeci(pickCümle(konfucyusData, "konfucyus", recentQuotes.konfucyus, seed, todayStr));
+  const unasCümle = kantSüzgeci(pickCümle(unasData, "unas", recentQuotes.unas, seed, todayStr));
 
   // 4. Mesajı oluştur (başlıklı + tematik oda)
   const odalar = ["persona", "shadow", "noise", "flow"] as const;
@@ -162,7 +237,8 @@ export function generateDailyMessage(seed: number, testDate?: string) {
 
   const eylemMesaji = `\n\n✨ Bugünün eylemi:\n${eylem}\n\n${neden}\n\n${hatirlatma}`;
 
-  const message = `${baslik} ${hamCümle}${eylemMesaji}`;
+  const alintiParagraf = `${jungCümle} ${socratesCümle} ${konfucyusCümle}`;
+  const message = `${baslik} ${hamCümle}\n\n${alintiParagraf}\n\n${unasCümle}${eylemMesaji}`;
 
   // 5. Tekrar kontrolü için kaydet
   const today = new Date().toISOString().split("T")[0];
@@ -181,161 +257,111 @@ export function generateDailyMessage(seed: number, testDate?: string) {
   history = history.filter((entry: any) => new Date(entry.date) >= sevenDaysAgo);
   localStorage.setItem("messageHistory", JSON.stringify(history));
 
+  // 5.1 Alıntı + Unas seçimlerini 14 günlük geçmişe kaydet (tekrar önleme)
+  let quoteHistory = JSON.parse(
+    localStorage.getItem("quoteHistory") || "[]"
+  ) as QuoteHistoryEntry[];
+  const quoteExistingIndex = quoteHistory.findIndex((entry) => entry.date === today);
+  const quoteEntry: QuoteHistoryEntry = {
+    date: today,
+    jung: jungCümle,
+    socrates: socratesCümle,
+    konfucyus: konfucyusCümle,
+    unas: unasCümle,
+  };
+  if (quoteExistingIndex !== -1) {
+    quoteHistory[quoteExistingIndex] = quoteEntry;
+  } else {
+    quoteHistory.push(quoteEntry);
+  }
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+  quoteHistory = quoteHistory.filter(
+    (entry) => new Date(entry.date) >= fourteenDaysAgo
+  );
+  localStorage.setItem("quoteHistory", JSON.stringify(quoteHistory));
+
   return { message: message };
 }
 
 // ============================================================
-// Mesaj Component'i
+// Cihaz kimliği (deviceId) + cihaza özel günlük mesaj
+// - Aynı gün farklı cihazlar farklı mesaj görür,
+//   aynı cihaz aynı gün aynı mesajı görmeye devam eder.
+// - Kullanıcıya hiçbir soru sorulmaz; deviceId arka planda üretilir.
 // ============================================================
-interface MesajProps {
-  onNavigate: (view: string) => void;
-  volume?: number;
-  onVolumeChange?: (vol: number) => void;
+const DEVICE_ID_KEY = "deviceId";
+const DAILY_CACHE_PREFIX = "dailyMessage_";
+
+export function getOrCreateDeviceId(): string {
+  let existing: string | null = null;
+  try {
+    existing = localStorage.getItem(DEVICE_ID_KEY);
+  } catch {}
+  if (existing) return existing;
+
+  let id = "";
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      id = crypto.randomUUID();
+    }
+  } catch {}
+  if (!id) {
+    id = "dev-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+  }
+  try {
+    localStorage.setItem(DEVICE_ID_KEY, id);
+  } catch {}
+  return id;
 }
 
-const Mesaj: React.FC<MesajProps> = ({ onNavigate, volume, onVolumeChange }) => {
-  const [dailyMessage, setDailyMessage] = useState<{ message: string } | null>(null);
-  const [dayPhase, setDayPhase] = useState<"init" | "waiting" | "reading" | "done">("init");
-  const [geminiQuotaError, setGeminiQuotaError] = useState(false);
-  const [shakeArmed, setShakeArmed] = useState(false);
-  const [shakeTriggered, setShakeTriggered] = useState(false);
-  const [showAlarmOverlay, setShowAlarmOverlay] = useState(false);
-  const shakeLastRef = useRef({ x: 0, y: 0, z: 0, lastTime: 0 });
+export function buildDailySeed(testDate?: string): number {
+  const today = (testDate || new Date().toISOString().split("T")[0]).replace(/-/g, "");
 
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    try {
-      const stored = localStorage.getItem("dailyMessage");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.date === today && parsed.message) {
-          setDailyMessage({ message: parsed.message });
-          setDayPhase("done");
-          return;
-        }
-      }
-    } catch {}
+  let selected: number[] | undefined;
+  let rejected: number[] | undefined;
+  try {
+    const s = localStorage.getItem("selectedIndices");
+    const r = localStorage.getItem("rejectedIndices");
+    if (s) selected = JSON.parse(s);
+    if (r) rejected = JSON.parse(r);
+  } catch {}
 
-    let selected: number[] | undefined;
-    let rejected: number[] | undefined;
-    try {
-      const s = localStorage.getItem("selectedIndices");
-      const r = localStorage.getItem("rejectedIndices");
-      if (s) selected = JSON.parse(s);
-      if (r) rejected = JSON.parse(r);
-    } catch {}
+  let seedStr = "kadim";
+  if (selected && selected.length > 0) {
+    for (const idx of selected) seedStr += "-s" + (idx + 1) * 7;
+  } else {
+    seedStr += "-default";
+  }
+  if (rejected && rejected.length > 0) {
+    for (const idx of rejected) seedStr += "-r" + (idx + 1) * 13;
+  }
+  seedStr += "-d" + today;
+  // Cihaz kimliği seed'e dahil: aynı gün farklı cihazlar farklı seed üretir
+  seedStr += "-dev" + getOrCreateDeviceId();
+  return hashCode(seedStr);
+}
 
-    setDayPhase("reading");
+export function getDailyMessageForDevice(testDate?: string): string {
+  const today = testDate || new Date().toISOString().split("T")[0];
+  const deviceId = getOrCreateDeviceId();
+  const cacheKey = DAILY_CACHE_PREFIX + deviceId;
 
-    let seedStr = "kadim";
-    if (selected && selected.length > 0) {
-      for (const idx of selected) {
-        seedStr += "-s" + (idx + 1) * 7;
-      }
-    } else {
-      seedStr += "-default";
-    }
-    if (rejected && rejected.length > 0) {
-      for (const idx of rejected) {
-        seedStr += "-r" + (idx + 1) * 13;
+  // Aynı (cihaz + tarih) için daha önce üretilmiş mesaj varsa onu kullan
+  try {
+    const stored = localStorage.getItem(cacheKey);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && parsed.date === today && typeof parsed.message === "string" && parsed.message) {
+        return parsed.message;
       }
     }
-    seedStr += "-d" + today.replace(/-/g, "");
-    const seed = hashCode(seedStr);
+  } catch {}
 
-    const testDate = localStorage.getItem("__testDate") || undefined;
-    const result = generateDailyMessage(seed, testDate);
-    const msg = result.message;
-    setDailyMessage({ message: msg });
-    setDayPhase("done");
+  const message = generateDailyMessage(buildDailySeed(testDate), testDate).message;
 
-    try {
-      localStorage.setItem(
-        "dailyMessage",
-        JSON.stringify({ date: today, message: msg })
-      );
-    } catch {}
-  }, []);
-
-  return (
-    <motion.div
-      key="index"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="flex-1 flex flex-col relative justify-start items-center p-3 pt-8 text-center overflow-hidden h-full min-h-0 bg-black"
-    >
-      {!dailyMessage || dayPhase !== "done" ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 space-y-3">
-          <div className="w-8 h-8 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin" />
-          <p className="text-yellow-500 text-[10px] tracking-[0.5em] uppercase animate-pulse">
-            {dayPhase === "waiting" || dayPhase === "reading"
-              ? "Kadim bağ kuruluyor..."
-              : "Kadim Kayıtlar Okunuyor..."}
-          </p>
-          {dayPhase === "reading" && (
-            <p className="text-white/40 text-[9px] tracking-[0.3em] font-light animate-pulse mt-2">
-              Kadim bağ kuruluyor...
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="w-full max-w-[450px] flex-1 flex flex-col items-center justify-center pt-0 relative overflow-hidden pb-0">
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <img
-              src="/mesajalt.jpg"
-              className="w-full h-full object-contain"
-              alt="Çerçeve"
-            />
-          </div>
-          <div className="relative z-10 w-full px-3 sm:px-4 flex flex-col justify-start">
-            <span className="text-stone-400 text-xs leading-snug text-center block pt-20">
-              {new Intl.DateTimeFormat("tr-TR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-                weekday: "long",
-              }).format((() => {
-                const td = localStorage.getItem("__testDate");
-                return td ? new Date(td + "T12:00:00") : new Date();
-              })())}
-            </span>
-            <div className="flex flex-col items-center justify-center w-full shrink-0 pt-5">
-            </div>
-            {geminiQuotaError && (
-              <div className="w-full p-2 mb-3 text-center">
-                <span className="text-[9px] text-yellow-400 font-semibold tracking-[0.05em] uppercase">
-                  ⚠️ GEÇİCİ KAPASİTE YOĞUNLUĞU: Lokal çevrimdışı arşiv otomatik devreye alındı. Kesintisiz okumaya devam edebilirsin.
-                </span>
-              </div>
-            )}
-            {dailyMessage && dayPhase === "done" ? (
-              <div className="relative min-h-0 w-full flex items-center justify-center">
-                <div className="mt-3 w-full px-6">
-                  <p className="text-[16px] text-stone-300 leading-snug text-justify">
-                    {dailyMessage.message}
-                  </p>
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      )}
-      <div className="absolute top-0 left-0 right-0 w-full flex justify-center pt-2">
-        <img
-          src="/pisxaloi.png"
-          alt="Test Bildirimi Gönder"
-          onClick={() => {
-            if ((window as any).__testNotification) {
-              (window as any).__testNotification();
-            }
-          }}
-          className="w-[60px] h-[60px] object-contain opacity-80 cursor-pointer active:scale-90 transition-transform duration-150 hover:opacity-100 hover:shadow-[0_0_30px_rgba(234,179,8,0.6)] hover:brightness-110"
-        />
-      </div>
-      
-    </motion.div>
-  );
-};
-
-export default Mesaj;
+  try {
+    localStorage.setItem(cacheKey, JSON.stringify({ date: today, message }));
+  } catch {}
+  return message;
+}
