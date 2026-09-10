@@ -1,0 +1,16 @@
+export const MESAJ_CUMLELERI_PT = [
+  "Como suas mensagens são criadas.",
+  "O app cria suas mensagens diárias direto no seu celular, sem precisar de internet.",
+  "Como isso funciona?",
+  "Na primeira vez que você abre o app, seu celular gera em silêncio uma assinatura só sua — nenhuma informação pessoal fica guardada nela.",
+  "Essa assinatura se combina com a data de hoje e forma uma mensagem diferente para cada celular, todos os dias.",
+  "Parte de cada mensagem segue um de quatro temas: olhar para dentro, encarar sua sombra, ficar na quietude ou seguir o fluxo.",
+  "As mensagens bebem do Egito antigo, das ideias de Carl Jung e dos ensinamentos de Sócrates e Confúcio.",
+  "Também entram 282 linhas milenares da Pirâmide de Unas, adaptadas para uma linguagem atual.",
+  "No final, cada mensagem é mantida simples o bastante para qualquer pessoa entender de primeira.",
+  "Nada aqui é aleatório. Tudo segue um método fixo, nutrido por milhares de anos de pensamento humano.",
+  "Essas mensagens não têm nenhuma ligação pessoal ou misteriosa com você ou com o dia de hoje.",
+  "O objetivo é só informar; elas não têm nenhuma outra pretensão.",
+  "Algumas mensagens podem ter pequenas imperfeições de linguagem; pedimos sua compreensão.",
+  "Obrigado pela sua compreensão.",
+];

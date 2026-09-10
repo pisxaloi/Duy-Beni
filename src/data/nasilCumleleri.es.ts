@@ -1,0 +1,16 @@
+export const MESAJ_CUMLELERI_ES = [
+  "Cómo se crean tus mensajes.",
+  "La app crea tus mensajes diarios directamente en tu teléfono, sin necesidad de internet.",
+  "¿Cómo funciona?",
+  "Al abrir la app por primera vez, tu teléfono genera en silencio una firma propia; ahí no se guarda ni un solo dato personal tuyo.",
+  "Esa firma se combina con la fecha de hoy y da forma a un mensaje distinto para cada teléfono y cada día.",
+  "Parte de cada mensaje sigue uno de cuatro temas: mirar hacia dentro, enfrentar tu sombra, quedarte en calma o dejarte llevar por el flujo.",
+  "Los mensajes beben del antiguo Egipto, de las ideas de Carl Jung y de las enseñanzas de Sócrates y Confucio.",
+  "También se suman 282 líneas milenarias de la Pirámide de Unas, adaptadas a un lenguaje actual.",
+  "Al final, cada mensaje se mantiene lo bastante sencillo para que cualquiera lo entienda de un vistazo.",
+  "Nada aquí es al azar. Todo sigue un método fijo, nutrido por miles de años de pensamiento humano.",
+  "Estos mensajes no tienen ninguna conexión personal o misteriosa contigo ni con el día de hoy.",
+  "Su propósito es solo informativo; no pretenden nada más.",
+  "Algunos mensajes pueden tener pequeñas imperfecciones de lenguaje; te pedimos comprensión.",
+  "Gracias por tu comprensión.",
+];

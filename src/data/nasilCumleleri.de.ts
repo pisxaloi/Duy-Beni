@@ -1,0 +1,16 @@
+export const MESAJ_CUMLELERI_DE = [
+  "Wie deine Nachrichten entstehen.",
+  "Die App erstellt deine täglichen Nachrichten direkt auf deinem Handy — ganz ohne Internet.",
+  "Wie funktioniert das?",
+  "Beim ersten Öffnen erzeugt dein Handy im Stillen ein eigenes Kennzeichen — darin steckt keine einzige persönliche Information von dir.",
+  "Dieses Kennzeichen verbindet sich mit dem heutigen Datum und formt so eine Nachricht, die für jedes Handy und jeden Tag anders ausfällt.",
+  "Ein Teil jeder Nachricht folgt einem von vier Themen: nach innen schauen, dem eigenen Schatten begegnen, in der Stille verweilen oder sich dem Fluss überlassen.",
+  "Die Nachrichten schöpfen aus dem alten Ägypten, den Gedanken Carl Jungs sowie den Lehren des Sokrates und des Konfuzius.",
+  "Auch 282 uralte Zeilen aus der Unas-Pyramide fließen mit ein — in heutige Sprache übertragen.",
+  "Am Ende werden die Nachrichten so einfach gehalten, dass sie jeder auf Anhieb versteht.",
+  "Die Nachrichten sind nicht zufällig, sondern folgen einer festen Methode, gespeist aus tausenden Jahren menschlichen Denkens.",
+  "Diese Nachrichten stehen in keiner persönlichen oder geheimnisvollen Verbindung zu dir oder zum heutigen Tag.",
+  "Ihr Zweck ist rein informativ; sie erheben keinen weiteren Anspruch.",
+  "Manche Nachrichten enthalten kleine sprachliche Unebenheiten; bitte hab dafür Verständnis.",
+  "Vielen Dank für dein Verständnis.",
+];

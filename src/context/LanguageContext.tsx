@@ -5,9 +5,9 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 // ------------------------------------------------------------
 // Desteklenen diller burada tanımlıdır. Yeni bir dil eklemek için listeye
 // kodu eklemek ve src/data altına o dilin veri dosyalarını koymak yeterlidir
-// (örn. jung.en.ts -> jungData_EN). Şu an: Türkçe (tr) ve İngilizce (en).
+// (örn. jung.en.ts -> jungData_EN). Şu an: Türkçe (tr), İngilizce (en), Almanca (de), İspanyolca (es), Portekizce (pt).
 // ============================================================
-export const SUPPORTED_LANGUAGES = ["tr", "en"] as const;
+export const SUPPORTED_LANGUAGES = ["tr", "en", "de", "es", "pt"] as const;
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 
 const STORAGE_KEY = "duybeni_language";

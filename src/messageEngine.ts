@@ -16,6 +16,24 @@ import { unasData_EN } from "./data/unas.en";
 import { tematikHavuz } from "./data/tematikHavuz";
 import { nefertitiData_EN, ogutler_EN } from "./data/nefertiti_ogutler.en";
 import { tematikHavuz_EN } from "./data/tematikHavuz.en";
+import { jungData_DE } from "./data/jung.de";
+import { socratesData_DE } from "./data/socrates.de";
+import { konfucyusData_DE } from "./data/konfucyus.de";
+import { unasData_DE } from "./data/unas.de";
+import { nefertitiData_DE, ogutler_DE } from "./data/nefertiti_ogutler.de";
+import { tematikHavuz_DE } from "./data/tematikHavuz.de";
+import { jungData_ES } from "./data/jung.es";
+import { socratesData_ES } from "./data/socrates.es";
+import { konfucyusData_ES } from "./data/konfucyus.es";
+import { unasData_ES } from "./data/unas.es";
+import { nefertitiData_ES, ogutler_ES } from "./data/nefertiti_ogutler.es";
+import { tematikHavuz_ES } from "./data/tematikHavuz.es";
+import { jungData_PT } from "./data/jung.pt";
+import { socratesData_PT } from "./data/socrates.pt";
+import { konfucyusData_PT } from "./data/konfucyus.pt";
+import { unasData_PT } from "./data/unas.pt";
+import { nefertitiData_PT, ogutler_PT } from "./data/nefertiti_ogutler.pt";
+import { tematikHavuz_PT } from "./data/tematikHavuz.pt";
 import type { Language } from "./context/LanguageContext";
 
 // ============================================================
@@ -64,9 +82,9 @@ function kantSüzgeci(cümle: string): string {
   temiz = temiz.replace(/^[\d\s\.\,\;\:\!\?\-\(\)\[\]\{\}""''""''""'']+/, "");
   temiz = temiz.replace(/\s{2,}/g, " ");
   temiz = temiz.trim();
-  temiz = temiz.replace(/^[^a-zA-ZıİğĞüÜşŞöÖçÇ]+/, "").trim();
+  temiz = temiz.replace(/^[^a-zA-ZıİğĞüÜşŞöÖçÇÀ-ÖØ-öø-ÿ¿¡]+/, "").trim();
   if (temiz.split(" ").length < 2) {
-    return cümle.replace(/^[^a-zA-ZıİğĞüÜşŞöÖçÇ]+/, "").trim();
+    return cümle.replace(/^[^a-zA-ZıİğĞüÜşŞöÖçÇÀ-ÖØ-öø-ÿ¿¡]+/, "").trim();
   }
   return temiz;
 }
@@ -191,9 +209,12 @@ export function generateDailyMessage(seed: number, testDate?: string, lang: Lang
 
   // Dil bazlı başlık / öğüt / tema havuzları: 'en' ise İngilizce veri dosyaları
   // (src/data/*.en.ts), 'tr' (ve varsayılan) ise mevcut Türkçe veriler kullanılır.
-  const nefertitiPool = lang === "en" ? nefertitiData_EN : nefertitiData;
-  const ogutPool = lang === "en" ? ogutler_EN : ogutler;
-  const tematikKaynak = lang === "en" ? tematikHavuz_EN : tematikHavuz;
+  const nefertitiPool =
+    lang === "pt" ? nefertitiData_PT : lang === "es" ? nefertitiData_ES : lang === "de" ? nefertitiData_DE : lang === "en" ? nefertitiData_EN : nefertitiData;
+  const ogutPool =
+    lang === "pt" ? ogutler_PT : lang === "es" ? ogutler_ES : lang === "de" ? ogutler_DE : lang === "en" ? ogutler_EN : ogutler;
+  const tematikKaynak =
+    lang === "pt" ? tematikHavuz_PT : lang === "es" ? tematikHavuz_ES : lang === "de" ? tematikHavuz_DE : lang === "en" ? tematikHavuz_EN : tematikHavuz;
 
   const baslikHash = hashWithDevice(todayStr);
   const baslikIndex = baslikHash % nefertitiPool.length;
@@ -217,10 +238,14 @@ export function generateDailyMessage(seed: number, testDate?: string, lang: Lang
   // 3.1 Alıntı katmanı (jung/socrates/konfucyus) + Unas katmanı – 14 gün tekrar önleme
   // Dil bazlı veri havuzu: 'en' ise İngilizce veri dosyaları (src/data/*.en.ts),
   // 'tr' (ve varsayılan) ise mevcut Türkçe havuzlar kullanılır.
-  const jungPool = lang === "en" ? jungData_EN : jungData;
-  const socratesPool = lang === "en" ? socratesData_EN : socratesData;
-  const konfucyusPool = lang === "en" ? konfucyusData_EN : konfucyusData;
-  const unasPool = lang === "en" ? unasData_EN : unasData;
+  const jungPool =
+    lang === "pt" ? jungData_PT : lang === "es" ? jungData_ES : lang === "de" ? jungData_DE : lang === "en" ? jungData_EN : jungData;
+  const socratesPool =
+    lang === "pt" ? socratesData_PT : lang === "es" ? socratesData_ES : lang === "de" ? socratesData_DE : lang === "en" ? socratesData_EN : socratesData;
+  const konfucyusPool =
+    lang === "pt" ? konfucyusData_PT : lang === "es" ? konfucyusData_ES : lang === "de" ? konfucyusData_DE : lang === "en" ? konfucyusData_EN : konfucyusData;
+  const unasPool =
+    lang === "pt" ? unasData_PT : lang === "es" ? unasData_ES : lang === "de" ? unasData_DE : lang === "en" ? unasData_EN : unasData;
 
   const recentQuotes = getRecentQuotes(14);
   const jungCümle = kantSüzgeci(pickCümle(jungPool, "jung", recentQuotes.jung, seed, todayStr));
@@ -256,7 +281,12 @@ export function generateDailyMessage(seed: number, testDate?: string, lang: Lang
   const hatirlatma = odaVerisi.touches[touchIndex];
 
   // Eylem bloğu başlığı da dile bağlıdır: 'en' -> "✨ Today's action:", 'tr' -> "✨ Bugünün eylemi:".
-  const eylemBasligi = lang === "en" ? "✨ Today's action:" : "✨ Bugünün eylemi:";
+  const eylemBasligi =
+    lang === "pt" ? "✨ A ação de hoje:"
+      : lang === "es" ? "✨ La acción de hoy:"
+      : lang === "de" ? "✨ Die heutige Handlung:"
+      : lang === "en" ? "✨ Today's action:"
+        : "✨ Bugünün eylemi:";
   const eylemMesaji = `\n\n${eylemBasligi}\n${eylem}\n\n${neden}\n\n${hatirlatma}`;
 
   const alintiParagraf = `${jungCümle} ${socratesCümle} ${konfucyusCümle}`;
@@ -379,7 +409,7 @@ export function getDilVeriYolu(dosyaAdi: string, lang: Language = "tr"): string 
 }
 
 export function dilVerisiVar(lang: Language): boolean {
-  return lang === "tr" || lang === "en";
+  return lang === "tr" || lang === "en" || lang === "de" || lang === "es" || lang === "pt";
 }
 
 export function getDailyMessageForDevice(testDate?: string, lang: Language = "tr"): string {

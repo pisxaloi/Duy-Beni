@@ -3,6 +3,10 @@ import { getDailyMessageForDevice } from "./messageEngine";
 import { HelpCircle, X, Share2 } from "lucide-react";
 import { MESAJ_CUMLELERI } from "./data/nasilCumleleri";
 import { MESAJ_CUMLELERI_EN } from "./data/nasilCumleleri.en";
+import { MESAJ_CUMLELERI_DE } from "./data/nasilCumleleri.de";
+import { MESAJ_CUMLELERI_ES } from "./data/nasilCumleleri.es";
+import { MESAJ_CUMLELERI_PT } from "./data/nasilCumleleri.pt";
+import { paylasimUI_TR, paylasimUI_EN, paylasimUI_DE, paylasimUI_ES, paylasimUI_PT } from "./paylasimUI";
 import { bannerGizle, bannerGoster } from "./services/adsService";
 import { useLanguage, SUPPORTED_LANGUAGES, type Language } from "./context/LanguageContext";
 
@@ -19,13 +23,6 @@ import { useLanguage, SUPPORTED_LANGUAGES, type Language } from "./context/Langu
 const TEST_LINK = "https://play.google.com/apps/testing/com.pisxaloi.duybeni";
 const SYNCRA_PLAY_LINK = "https://play.google.com/store/apps/details?id=com.pisxaloi.syncra";
 const MAAT_PLAY_LINK = "https://play.google.com/store/apps/details?id=com.maat.app";
-const PAYLASIM_METNI =
-  "Bugünün mesajı hoşuna gittiyse bir dostunla paylaş; uygulamayı beğendiysen yayılmasına katkı ver.";
-
-// Bildirim test butonu: development modunda VEYA VITE_TEST_BILDIRIM=1 ile derlenirse görünür.
-// (APK ile test için: $env:VITE_TEST_BILDIRIM="1"; npm run build)
-const TEST_BILDIRIM_BUTONU =
-  import.meta.env.DEV || import.meta.env.VITE_TEST_BILDIRIM === "1";
 
 const Index: React.FC = () => {
   const { language, setLanguage } = useLanguage();
@@ -35,48 +32,6 @@ const Index: React.FC = () => {
   const [showShare, setShowShare] = useState(false);
   const [showDeleteInfo, setShowDeleteInfo] = useState(false);
   const [linkKopyalandi, setLinkKopyalandi] = useState(false);
-  const [bildirimTestDurum, setBildirimTestDurum] = useState<string>("");
-
-  // ============================================================
-  // GEÇİCİ DEV ARACI — Bildirimi test et (yalnızca development modunda görünür)
-  // App.tsx'teki 07:00 bildirimiyle aynı içerik, ama 10 saniye sonraya planlar.
-  // Çakışmaması için farklı ID (9999) kullanır. Kalıcı özellik DEĞİLDİR.
-  // ============================================================
-  const bildirimTestEt = async () => {
-    setBildirimTestDurum("Planlanıyor...");
-    try {
-      const { LocalNotifications } = await import("@capacitor/local-notifications");
-
-      const izin = await LocalNotifications.checkPermissions();
-      if (izin.display !== "granted") {
-        const req = await LocalNotifications.requestPermissions();
-        if (req.display !== "granted") {
-          setBildirimTestDurum("Bildirim izni verilmedi.");
-          return;
-        }
-      }
-
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: 9999,
-            title: "Nefertiti",
-            body: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
-            largeBody: "Kadim mesaj seni bekliyor. Dinlemek ister misin?",
-            summaryText: "Duy Beni",
-            schedule: { at: new Date(Date.now() + 10000) },
-            sound: "beep.wav",
-            channelId: "duybeni_channel",
-            extra: { url: "/?autoPlay=true" },
-          },
-        ],
-      });
-      setBildirimTestDurum("✅ 10 sn sonraya planlandı (id 9999).");
-      setTimeout(() => setBildirimTestDurum(""), 4000);
-    } catch (err) {
-      setBildirimTestDurum("⚠️ Planlanamadı: " + (err as Error).message);
-    }
-  };
 
   // Panoya kopyalama (clipboard API + eski tarayıcı fallback)
   const panoyaKopyala = async (metin: string): Promise<boolean> => {
@@ -115,7 +70,7 @@ const Index: React.FC = () => {
       try {
         await navigator.share({
           title: "Duy Beni",
-          text: PAYLASIM_METNI,
+          text: paylasimUI.metin,
           url: TEST_LINK,
         });
         return;
@@ -138,7 +93,7 @@ const Index: React.FC = () => {
     try {
       // Cihaza özel günlük mesaj: aynı gün aynı cihazda aynı,
       // farklı cihazlarda farklı mesaj (deviceId seed'e dahil).
-      // lang: 'tr' (Türkçe) veya 'en' (İngilizce) – dile göre veri havuzu seçilir.
+      // lang: 'tr' / 'en' / 'de' / 'es' / 'pt' – dile göre veri havuzu ve arayüz metinleri seçilir.
       const testDate = localStorage.getItem("__testDate") || undefined;
       setMesaj(getDailyMessageForDevice(testDate, language));
     } catch (err) {
@@ -146,9 +101,23 @@ const Index: React.FC = () => {
     }
   }, [language]);
 
+  // PAYLAŞ modalı metinleri: dile göre (varsayılan TR)
+  const paylasimUI =
+    language === "en" ? paylasimUI_EN
+      : language === "de" ? paylasimUI_DE
+        : language === "es" ? paylasimUI_ES
+          : language === "pt" ? paylasimUI_PT
+            : paylasimUI_TR;
+
   // "?" bilgi modalı metinleri: dile göre TR / EN
-  const bilgiCumleleri = language === "en" ? MESAJ_CUMLELERI_EN : MESAJ_CUMLELERI;
-  const bilgiBasligi = language === "en" ? "How your messages are made" : "Mesajlar nasıl üretiliyor";
+  const bilgiCumleleri =
+    language === "pt" ? MESAJ_CUMLELERI_PT : language === "es" ? MESAJ_CUMLELERI_ES : language === "de" ? MESAJ_CUMLELERI_DE : language === "en" ? MESAJ_CUMLELERI_EN : MESAJ_CUMLELERI;
+  const bilgiBasligi =
+    language === "pt" ? "Como suas mensagens são criadas"
+      : language === "es" ? "Cómo se crean tus mensajes"
+      : language === "de" ? "Wie deine Nachrichten entstehen"
+      : language === "en" ? "How your messages are made"
+        : "Mesajlar nasıl üretiliyor";
 
   return (
     <div
@@ -229,7 +198,7 @@ const Index: React.FC = () => {
             const kodlar = SUPPORTED_LANGUAGES.map((l: Language) => ({
               key: l,
               label: l.toUpperCase(),
-              alt: l === "tr" ? "Türkçe" : "English",
+              alt: l === "tr" ? "Türkçe" : l === "en" ? "English" : l === "de" ? "Deutsch" : l === "es" ? "Español" : "Português",
               lang: l,
             }));
             const aktif = kodlar.find((k) => k.lang === language) ?? kodlar[0];
@@ -247,8 +216,8 @@ const Index: React.FC = () => {
                   }}
                   style={{
                     cursor: "pointer",
-                    width: 56,
-                    height: 56,
+                    width: 39,
+                    height: 39,
                     userSelect: "none",
                     display: "flex",
                     alignItems: "center",
@@ -256,11 +225,11 @@ const Index: React.FC = () => {
                     margin: 0,
                     padding: 0,
                     border: 0,
-                    borderRadius: 8,
+                    borderRadius: 6,
                     opacity: item.lang === language ? 1 : 0.5,
                     background: "#bdbdbd",
                     color: "#fff",
-                    fontSize: "15px",
+                    fontSize: "11px",
                     fontWeight: 700,
                     fontFamily: "sans-serif",
                     letterSpacing: "1px",
@@ -273,23 +242,6 @@ const Index: React.FC = () => {
           })()}
         </div>
       </div>
-
-      {/* GEÇİCİ DEV ARACI — Bildirimi test et (dev modunda veya VITE_TEST_BILDIRIM=1 ile) */}
-      {TEST_BILDIRIM_BUTONU && (
-        <div className="absolute bottom-[70px] left-1/2 -translate-x-1/2 z-[9998] flex flex-col items-center gap-1">
-          <button
-            onClick={bildirimTestEt}
-            className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-amber-500/30 text-amber-300/80 text-[10px] tracking-wide hover:text-amber-200 hover:border-amber-400/60 active:scale-[0.97] transition-all cursor-pointer"
-          >
-            Bildirimi test et
-          </button>
-          {bildirimTestDurum && (
-            <span className="text-amber-300/80 text-[10px] bg-black/60 rounded-full px-3 py-1">
-              {bildirimTestDurum}
-            </span>
-          )}
-        </div>
-      )}
 
       {/* BİLGİ MODALI */}
       {showInfo && (
@@ -340,7 +292,7 @@ const Index: React.FC = () => {
           >
             <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
               <h2 className="text-amber-300 text-sm font-medium tracking-[0.3em] uppercase">
-                Paylaş
+                {paylasimUI.baslik}
               </h2>
               <button
                 onClick={() => { setShowShare(false); setShowDeleteInfo(false); }}
@@ -354,13 +306,13 @@ const Index: React.FC = () => {
             <div className="flex flex-col gap-3 overflow-y-auto scrollbar-hide pr-1">
               {/* Paylaşım alanı */}
               <p className="text-white/90 text-[13px] leading-relaxed text-justify">
-                Bugünün mesajı hoşuna gittiyse bir dostunla paylaş; uygulamayı beğendiysen yayılmasına katkı ver.
+                {paylasimUI.metin}
               </p>
 
               {/* Test (beta) linki — tıklanabilir + kopyalanabilir */}
               <div className="flex flex-col gap-2 rounded-lg border border-amber-500/20 bg-black/40 p-3">
                 <span className="text-amber-400/70 text-[10px] uppercase tracking-widest">
-                  Test (beta) linki
+                  {paylasimUI.testLinkiEtiket}
                 </span>
                 <a
                   href={TEST_LINK}
@@ -374,7 +326,7 @@ const Index: React.FC = () => {
                   onClick={handleCopyTestLink}
                   className="self-start px-3 py-1.5 rounded-full border border-amber-500/30 bg-amber-900/20 text-amber-200/90 text-[10px] tracking-wide hover:bg-amber-800/30 active:scale-[0.97] transition-all cursor-pointer"
                 >
-                  {linkKopyalandi ? "Kopyalandı ✓" : "Test linkini kopyala"}
+                  {linkKopyalandi ? paylasimUI.kopyalandi : paylasimUI.kopyalaButon}
                 </button>
               </div>
 
@@ -382,12 +334,12 @@ const Index: React.FC = () => {
                 onClick={handleShare}
                 className="w-full py-2 rounded-lg border border-yellow-500/40 bg-yellow-600/20 text-amber-200 text-xs font-medium tracking-wider uppercase hover:bg-yellow-600/30 active:scale-[0.99] transition-all cursor-pointer"
               >
-                Paylaş
+                {paylasimUI.paylasButon}
               </button>
 
               {/* 1) Katkı daveti */}
               <p className="text-white/70 text-[13px] leading-relaxed text-justify mt-1">
-                Yayılmasına katkıda bulunabilirsin.
+                {paylasimUI.katkiMetni}
               </p>
 
               {/* 2) MAAT ve SYNCRA kartları — logo + isim + açıklama + Google Play linki */}
@@ -407,7 +359,7 @@ const Index: React.FC = () => {
                     MAAT
                   </span>
                   <span className="text-white/60 text-[10px] leading-snug">
-                    Kadim Mısır sembolleriyle, içindeki mesajı adım adım çözmen için.
+                    {paylasimUI.maatAciklama}
                   </span>
                 </a>
                 <a
@@ -425,7 +377,7 @@ const Index: React.FC = () => {
                     Syncra
                   </span>
                   <span className="text-white/60 text-[10px] leading-snug">
-                    İçindeki soruya, I Ching'in kadim bilgeliğiyle sezgisel bir yön bulman için.
+                    {paylasimUI.syncraAciklama}
                   </span>
                 </a>
               </div>
@@ -436,12 +388,12 @@ const Index: React.FC = () => {
                   onClick={() => setShowDeleteInfo(true)}
                   className="self-center text-white/35 hover:text-white/60 text-[10px] underline underline-offset-2 transition-colors cursor-pointer"
                 >
-                  Hesabımı silmek istiyorum
+                  {paylasimUI.hesapSil}
                 </button>
               ) : (
                 <div className="bg-red-950/40 border border-red-500/20 rounded-lg p-3">
                   <p className="text-red-200/80 text-[11px] leading-relaxed text-center">
-                    Hesap silme talebi için: destek@duybeni.com adresinden bize ulaşabilirsin.
+                    {paylasimUI.hesapSilBilgi}
                   </p>
                 </div>
               )}
