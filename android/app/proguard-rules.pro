@@ -18,7 +18,7 @@
 -keep class com.capacitorjs.plugins.localnotifications.** { *; }
 
 # Keep app specific classes
--keep class com.unas.jung.** { *; }
+-keep class com.pisxaloi.duybeni.** { *; }
 
 # Preserve line number information for debugging stack traces
 -keepattributes SourceFile,LineNumberTable
