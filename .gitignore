@@ -2,6 +2,8 @@ node_modules/
 build/
 dist/
 coverage/
+# Doğrulama ekran görüntüleri (repo boyutu için tutulmaz)
+screenshots/
 .DS_Store
 *.log
 .env*
