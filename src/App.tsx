@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import "./index.css";
 import Index from "./Index";
+import BannerAd from "./components/BannerAd";
 
 const App: React.FC = () => {
 
@@ -67,9 +68,15 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="app relative h-full w-full">
-      {/* INDEX SAYFASI */}
-      <Index />
+    <div className="app relative h-full w-full flex flex-col">
+      {/* İÇERİK ALANI (banner'ın kapladığı alan hariç) */}
+      <div className="relative flex-1 min-h-0 w-full">
+        {/* INDEX SAYFASI */}
+        <Index />
+      </div>
+
+      {/* REKLAM BANNER — yalnızca native platformda görünür */}
+      <BannerAd />
     </div>
   );
 };

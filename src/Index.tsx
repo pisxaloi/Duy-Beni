@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getDailyMessageForDevice } from "./messageEngine";
 import { HelpCircle, X, Share2 } from "lucide-react";
 import { MESAJ_CUMLELERI } from "./data/nasilCumleleri";
+import { bannerGizle, bannerGoster } from "./services/adsService";
 
 // ============================================================
 // İZOLE TEST SAYFASI (Index)
@@ -120,6 +121,15 @@ const Index: React.FC = () => {
     await handleCopyTestLink();
   };
 
+  // Modal açıkken reklam banner'ını gizle, kapanınca geri getir (native'de anlamlı).
+  useEffect(() => {
+    if (showInfo || showShare) {
+      bannerGizle();
+    } else {
+      bannerGoster();
+    }
+  }, [showInfo, showShare]);
+
   useEffect(() => {
     try {
       // Cihaza özel günlük mesaj: aynı gün aynı cihazda aynı,
@@ -151,11 +161,22 @@ const Index: React.FC = () => {
 
       {/* Ortalanmış gerçek günlük mesaj */}
       <div className="relative z-10 w-full max-w-[350px] max-h-[72%] flex flex-col items-center justify-center px-4">
-        <p
-          className="text-white text-sm sm:text-base leading-relaxed text-justify w-full whitespace-pre-line max-h-full overflow-y-auto scrollbar-hide py-2"
-        >
-          {mesaj || "Yükleniyor..."}
-        </p>
+        <div className="w-full max-h-full overflow-y-auto scrollbar-hide py-1 flex flex-col gap-2">
+          {mesaj
+            ? mesaj
+                .split(/\n{2,}/)
+                .map((p) => p.trim())
+                .filter(Boolean)
+                .map((paragraf, i) => (
+                  <p
+                    key={i}
+                    className="text-white text-sm sm:text-base leading-snug text-justify w-full whitespace-pre-line"
+                  >
+                    {paragraf}
+                  </p>
+                ))
+            : <p className="text-white text-sm sm:text-base leading-snug text-justify w-full">Yükleniyor...</p>}
+        </div>
       </div>
 
       {/* SOL ÜST SORU İŞARETİ — "Mesajlar nasıl üretiliyor" kısayolu */}
@@ -178,7 +199,7 @@ const Index: React.FC = () => {
 
       {/* GEÇİCİ DEV ARACI — Bildirimi test et (dev modunda veya VITE_TEST_BILDIRIM=1 ile) */}
       {TEST_BILDIRIM_BUTONU && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[9998] flex flex-col items-center gap-1">
+        <div className="absolute bottom-[70px] left-1/2 -translate-x-1/2 z-[9998] flex flex-col items-center gap-1">
           <button
             onClick={bildirimTestEt}
             className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-amber-500/30 text-amber-300/80 text-[10px] tracking-wide hover:text-amber-200 hover:border-amber-400/60 active:scale-[0.97] transition-all cursor-pointer"
