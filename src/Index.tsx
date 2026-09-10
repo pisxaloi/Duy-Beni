@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { getDailyMessageForDevice } from "./messageEngine";
 import { HelpCircle, X, Share2 } from "lucide-react";
 import { MESAJ_CUMLELERI } from "./data/nasilCumleleri";
+import { MESAJ_CUMLELERI_EN } from "./data/nasilCumleleri.en";
 import { bannerGizle, bannerGoster } from "./services/adsService";
+import { useLanguage, SUPPORTED_LANGUAGES, type Language } from "./context/LanguageContext";
 
 // ============================================================
 // İZOLE TEST SAYFASI (Index)
@@ -26,7 +28,9 @@ const TEST_BILDIRIM_BUTONU =
   import.meta.env.DEV || import.meta.env.VITE_TEST_BILDIRIM === "1";
 
 const Index: React.FC = () => {
+  const { language, setLanguage } = useLanguage();
   const [mesaj, setMesaj] = useState<string>("");
+  const [dilAcik, setDilAcik] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showDeleteInfo, setShowDeleteInfo] = useState(false);
@@ -134,12 +138,17 @@ const Index: React.FC = () => {
     try {
       // Cihaza özel günlük mesaj: aynı gün aynı cihazda aynı,
       // farklı cihazlarda farklı mesaj (deviceId seed'e dahil).
+      // lang: 'tr' (Türkçe) veya 'en' (İngilizce) – dile göre veri havuzu seçilir.
       const testDate = localStorage.getItem("__testDate") || undefined;
-      setMesaj(getDailyMessageForDevice(testDate));
+      setMesaj(getDailyMessageForDevice(testDate, language));
     } catch (err) {
       setMesaj("Mesaj üretilemedi: " + (err as Error).message);
     }
-  }, []);
+  }, [language]);
+
+  // "?" bilgi modalı metinleri: dile göre TR / EN
+  const bilgiCumleleri = language === "en" ? MESAJ_CUMLELERI_EN : MESAJ_CUMLELERI;
+  const bilgiBasligi = language === "en" ? "How your messages are made" : "Mesajlar nasıl üretiliyor";
 
   return (
     <div
@@ -188,14 +197,82 @@ const Index: React.FC = () => {
         <HelpCircle size={20} />
       </button>
 
-      {/* SAĞ ÜST PAYLAŞ */}
+      {/* PAYLAŞ İKONU — "?" ikonunun yanında (sağ üstteki dil seçiciyle çakışmaz) */}
       <button
         onClick={() => setShowShare(true)}
         aria-label="Paylaş"
-        className="absolute top-3 right-3 z-[9998] p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/70 hover:text-amber-300 hover:border-amber-400/50 active:scale-95 transition-all cursor-pointer"
+        className="absolute top-3 left-[52px] z-[9998] p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white/70 hover:text-amber-300 hover:border-amber-400/50 active:scale-95 transition-all cursor-pointer"
       >
         <Share2 size={18} />
       </button>
+
+      {/* SAĞ ÜST: DİL SEÇİCİ (Syncra/MAAT ile birebir aynı görsel stil)
+          Kapalıyken yalnızca aktif dilin kutusu görünür; hover/tık ile dikey sütun açılır. */}
+      <div
+        className="absolute top-4 right-4 z-[9999]"
+        onMouseEnter={() => setDilAcik(true)}
+        onMouseLeave={() => setDilAcik(false)}
+        onClick={() => setDilAcik(!dilAcik)}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            lineHeight: 0,
+            fontSize: 0,
+            background: dilAcik ? "rgba(255,255,255,0.92)" : "transparent",
+            borderRadius: "0 0 8px 8px",
+            boxShadow: dilAcik ? "0 4px 16px rgba(0,0,0,0.12)" : "none",
+          }}
+        >
+          {(() => {
+            const kodlar = SUPPORTED_LANGUAGES.map((l: Language) => ({
+              key: l,
+              label: l.toUpperCase(),
+              alt: l === "tr" ? "Türkçe" : "English",
+              lang: l,
+            }));
+            const aktif = kodlar.find((k) => k.lang === language) ?? kodlar[0];
+            const sirali = [aktif, ...kodlar.filter((k) => k.lang !== language)];
+            return sirali.map((item, idx) => {
+              if (!dilAcik && idx > 0) return null;
+              return (
+                <div
+                  key={item.key}
+                  title={item.alt}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLanguage(item.lang);
+                    setDilAcik(false);
+                  }}
+                  style={{
+                    cursor: "pointer",
+                    width: 56,
+                    height: 56,
+                    userSelect: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: 0,
+                    padding: 0,
+                    border: 0,
+                    borderRadius: 8,
+                    opacity: item.lang === language ? 1 : 0.5,
+                    background: "#bdbdbd",
+                    color: "#fff",
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    fontFamily: "sans-serif",
+                    letterSpacing: "1px",
+                  }}
+                >
+                  {item.label}
+                </div>
+              );
+            });
+          })()}
+        </div>
+      </div>
 
       {/* GEÇİCİ DEV ARACI — Bildirimi test et (dev modunda veya VITE_TEST_BILDIRIM=1 ile) */}
       {TEST_BILDIRIM_BUTONU && (
@@ -228,7 +305,7 @@ const Index: React.FC = () => {
           >
             <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
               <h2 className="text-amber-300 text-sm font-medium tracking-wide">
-                Mesajlar nasıl üretiliyor
+                {bilgiBasligi}
               </h2>
               <button
                 onClick={() => setShowInfo(false)}
@@ -239,7 +316,7 @@ const Index: React.FC = () => {
               </button>
             </div>
             <div className="flex flex-col gap-1 overflow-y-auto scrollbar-hide pr-1">
-              {MESAJ_CUMLELERI.map((cümle, idx) => (
+              {bilgiCumleleri.map((cümle, idx) => (
                 <p key={idx} className="text-white/90 text-[12px] leading-tight text-justify">
                   {cümle}
                 </p>

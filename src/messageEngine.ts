@@ -9,7 +9,14 @@ import { socratesData } from "./data/socrates";
 import { konfucyusData } from "./data/konfucyus";
 import { jungData } from "./data/jung";
 import { unasData } from "./data/unas";
+import { jungData_EN } from "./data/jung.en";
+import { socratesData_EN } from "./data/socrates.en";
+import { konfucyusData_EN } from "./data/konfucyus.en";
+import { unasData_EN } from "./data/unas.en";
 import { tematikHavuz } from "./data/tematikHavuz";
+import { nefertitiData_EN, ogutler_EN } from "./data/nefertiti_ogutler.en";
+import { tematikHavuz_EN } from "./data/tematikHavuz.en";
+import type { Language } from "./context/LanguageContext";
 
 // ============================================================
 // nefertitiData – 19 Nefertiti cümlesi (b01–b19)
@@ -166,7 +173,7 @@ const ogutler = [
 // ============================================================
 // generateDailyMessage – ESKİ SİSTEM + NEFERTITI + BENZETME
 // ============================================================
-export function generateDailyMessage(seed: number, testDate?: string) {
+export function generateDailyMessage(seed: number, testDate?: string, lang: Language = "tr") {
   // 1. Nefertiti başlığı + öğüt: tarih + cihaz kimliği (deviceId) birlikte hash'lenir.
   //    Böylece aynı gün farklı cihazlar baştan (giriş cümlesinden) farklı mesaj görür.
   const todayStr = (testDate || new Date().toISOString().split("T")[0]).replace(/-/g, "");
@@ -182,37 +189,50 @@ export function generateDailyMessage(seed: number, testDate?: string) {
     return Math.abs(h);
   };
 
+  // Dil bazlı başlık / öğüt / tema havuzları: 'en' ise İngilizce veri dosyaları
+  // (src/data/*.en.ts), 'tr' (ve varsayılan) ise mevcut Türkçe veriler kullanılır.
+  const nefertitiPool = lang === "en" ? nefertitiData_EN : nefertitiData;
+  const ogutPool = lang === "en" ? ogutler_EN : ogutler;
+  const tematikKaynak = lang === "en" ? tematikHavuz_EN : tematikHavuz;
+
   const baslikHash = hashWithDevice(todayStr);
-  const baslikIndex = baslikHash % nefertitiData.length;
-  const baslik = nefertitiData[baslikIndex];
+  const baslikIndex = baslikHash % nefertitiPool.length;
+  const baslik = nefertitiPool[baslikIndex];
 
   // 2. ogutler dizisinden bir öğüt seç (tekrar kontrolü ile)
   //    Seçim tarihe + cihaza bağlıdır; 7 gün tekrar önleme aynen korunur.
   const ogutHash = hashWithDevice(todayStr + "|ogut");
-  let ogutIndex = ogutHash % ogutler.length;
+  let ogutIndex = ogutHash % ogutPool.length;
   const recentOgutler = getRecentItems().ogutler;
   let attempts = 0;
-  while (recentOgutler.includes(ogutler[ogutIndex]) && attempts < ogutler.length) {
-    ogutIndex = (ogutIndex + 1) % ogutler.length;
+  while (recentOgutler.includes(ogutPool[ogutIndex]) && attempts < ogutPool.length) {
+    ogutIndex = (ogutIndex + 1) % ogutPool.length;
     attempts++;
   }
-  let hamCümle = ogutler[ogutIndex];
+  let hamCümle = ogutPool[ogutIndex];
 
   // 3. Kant süzgecinden geçir
   hamCümle = kantSüzgeci(hamCümle);
 
   // 3.1 Alıntı katmanı (jung/socrates/konfucyus) + Unas katmanı – 14 gün tekrar önleme
+  // Dil bazlı veri havuzu: 'en' ise İngilizce veri dosyaları (src/data/*.en.ts),
+  // 'tr' (ve varsayılan) ise mevcut Türkçe havuzlar kullanılır.
+  const jungPool = lang === "en" ? jungData_EN : jungData;
+  const socratesPool = lang === "en" ? socratesData_EN : socratesData;
+  const konfucyusPool = lang === "en" ? konfucyusData_EN : konfucyusData;
+  const unasPool = lang === "en" ? unasData_EN : unasData;
+
   const recentQuotes = getRecentQuotes(14);
-  const jungCümle = kantSüzgeci(pickCümle(jungData, "jung", recentQuotes.jung, seed, todayStr));
-  const socratesCümle = kantSüzgeci(pickCümle(socratesData, "socrates", recentQuotes.socrates, seed, todayStr));
-  const konfucyusCümle = kantSüzgeci(pickCümle(konfucyusData, "konfucyus", recentQuotes.konfucyus, seed, todayStr));
-  const unasCümle = kantSüzgeci(pickCümle(unasData, "unas", recentQuotes.unas, seed, todayStr));
+  const jungCümle = kantSüzgeci(pickCümle(jungPool, "jung", recentQuotes.jung, seed, todayStr));
+  const socratesCümle = kantSüzgeci(pickCümle(socratesPool, "socrates", recentQuotes.socrates, seed, todayStr));
+  const konfucyusCümle = kantSüzgeci(pickCümle(konfucyusPool, "konfucyus", recentQuotes.konfucyus, seed, todayStr));
+  const unasCümle = kantSüzgeci(pickCümle(unasPool, "unas", recentQuotes.unas, seed, todayStr));
 
   // 4. Mesajı oluştur (başlıklı + tematik oda)
   const odalar = ["persona", "shadow", "noise", "flow"] as const;
   const odaIndex = Math.abs(seed) % odalar.length;
   const seciliOda: "persona" | "shadow" | "noise" | "flow" = odalar[odaIndex];
-  const odaVerisi = tematikHavuz[seciliOda];
+  const odaVerisi = tematikKaynak[seciliOda];
 
   // Son kullanılan eylem index'ini localStorage'dan al
   const lastKey = `last_${seciliOda}_action_index`;
@@ -235,7 +255,9 @@ export function generateDailyMessage(seed: number, testDate?: string) {
   const neden = odaVerisi.becourses[becourseIndex];
   const hatirlatma = odaVerisi.touches[touchIndex];
 
-  const eylemMesaji = `\n\n✨ Bugünün eylemi:\n${eylem}\n\n${neden}\n\n${hatirlatma}`;
+  // Eylem bloğu başlığı da dile bağlıdır: 'en' -> "✨ Today's action:", 'tr' -> "✨ Bugünün eylemi:".
+  const eylemBasligi = lang === "en" ? "✨ Today's action:" : "✨ Bugünün eylemi:";
+  const eylemMesaji = `\n\n${eylemBasligi}\n${eylem}\n\n${neden}\n\n${hatirlatma}`;
 
   const alintiParagraf = `${jungCümle} ${socratesCümle} ${konfucyusCümle}`;
   const message = `${baslik} ${hamCümle}\n\n${alintiParagraf}\n\n${unasCümle}${eylemMesaji}`;
@@ -315,7 +337,7 @@ export function getOrCreateDeviceId(): string {
   return id;
 }
 
-export function buildDailySeed(testDate?: string): number {
+export function buildDailySeed(testDate?: string, lang: Language = "tr"): number {
   const today = (testDate || new Date().toISOString().split("T")[0]).replace(/-/g, "");
 
   let selected: number[] | undefined;
@@ -339,13 +361,32 @@ export function buildDailySeed(testDate?: string): number {
   seedStr += "-d" + today;
   // Cihaz kimliği seed'e dahil: aynı gün farklı cihazlar farklı seed üretir
   seedStr += "-dev" + getOrCreateDeviceId();
+  // Dil katmanı hazırlığı: 'tr' davranışı birebir korunur; başka dil eklenince
+  // o dil için farklı bir seed üretilir (çeviri geldiğinde mesajlar ayrışsın).
+  if (lang !== "tr") seedStr += "-lang" + lang;
   return hashCode(seedStr);
 }
 
-export function getDailyMessageForDevice(testDate?: string): string {
+// ============================================================
+// Dil bazlı veri yolu yardımcıları (İSKELET)
+// ------------------------------------------------------------
+// Şu an tüm metin verisi yalnızca Türkçe ve kod içindedir (src/data/*).
+// İleride public/data/<lang>/... yapısına geçilirse bu yardımcılar kullanılacak;
+// generateDailyMessage / getDailyMessageForDevice zaten `lang` parametresi alıyor.
+// ============================================================
+export function getDilVeriYolu(dosyaAdi: string, lang: Language = "tr"): string {
+  return `/data/${lang}/${dosyaAdi}`;
+}
+
+export function dilVerisiVar(lang: Language): boolean {
+  return lang === "tr" || lang === "en";
+}
+
+export function getDailyMessageForDevice(testDate?: string, lang: Language = "tr"): string {
   const today = testDate || new Date().toISOString().split("T")[0];
   const deviceId = getOrCreateDeviceId();
-  const cacheKey = DAILY_CACHE_PREFIX + deviceId;
+  // 'tr' için eski önbellek anahtarı korunur (davranış değişmez); diğer diller ayrı anahtar kullanır.
+  const cacheKey = DAILY_CACHE_PREFIX + deviceId + (lang === "tr" ? "" : "_" + lang);
 
   // Aynı (cihaz + tarih) için daha önce üretilmiş mesaj varsa onu kullan
   try {
@@ -358,7 +399,7 @@ export function getDailyMessageForDevice(testDate?: string): string {
     }
   } catch {}
 
-  const message = generateDailyMessage(buildDailySeed(testDate), testDate).message;
+  const message = generateDailyMessage(buildDailySeed(testDate, lang), testDate, lang).message;
 
   try {
     localStorage.setItem(cacheKey, JSON.stringify({ date: today, message }));
